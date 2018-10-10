@@ -1,0 +1,223 @@
+一、环境的搭建：
+    1.开发工具idea、eclipse。
+    2.SOA架构、网站架构优化：分布式部署、集群部署、负载均衡
+    3.数据库表结构分析创建
+    4.后端框架采用Spring +SpringMVC+mybatis +Dubbox
+    5.前端采用angularJS + Bootstrap。
+    6.Zookeeper 在Linux系统的安装
+
+二、搭建框架步骤：
+    1.创建一个父工程(pinyougou-parent)，和7个子工程pinyougou-common、pinyougou-dao、pinyougou-manager-web、pinyougou-pojo、pinyougou-sellergoods-interface、pinyougou-sellergoods-service、pinyougou-shop-web
+
+    2.pinyougou-common普通的代表共有的jar工程
+    3.pinyougou-dao：数据操作层jar工程也是用的逆向工程生成的代码和对应的xml文件(放在resources下的)，还有需要有对应的配置，mybatis(SqlMapConfig.xml),properties(db.properties),spring(applicationContext-dao.xml),在pom文件中需要引入坐标<!--分页工具-->、<!-- Mybatis -->、<!-- MySql -->、<!-- 连接池 -->、和需要用到的pojo坐标
+    4pinyougou-pojo：对应数据库中字段的普通jar工程这个是用逆向工程生成的代码
+    5.pinyougou-sellergoods-interface：纯接口的的普通jar工程(打包的方式)，pom.xml需要使用pojo的坐标
+    6.pinyougou-sellergoods-service：这是一个要发布到tomcat上的后台服务war工程，这里写的是接口实现类的，在resource中配置spring(applicationContext-service.xml[<!-- 引用dubbo 服务 -->]、applicationContext-tx.xml),在web.xml中<!-- 加载spring容器 -->，在pom.xml中添加坐标<!-- Spring -->、<!-- dubbo相关 -->、tomcat插件坐标
+    7.pinyougou-manager-web: 运营商管理后台war工程，这里是写controller层的代码，在resource写配置config(application.properties)、spring(springmvc.xml)[<!-- 引用dubbo 服务 -->]，在webapp中是实现前台的代码，在web.xml中配置<!-- 解决post乱码 -->、DispatcherServlet配置和拦截形式<!-- 指定加载的配置文件 ，通过参数contextConfigLocation加载-->
+    8.pinyougou-shop-web和pinyougou-manager-web一样的工程
+
+二、品牌列表-后台代码编写
+    1.服务层接口：在pinyougou-sellergoods-interface工程中创建BrandService接口
+    2.服务实现类：在pinyougou-sellergoods-service 工程创建BrandServiceImpl类
+    3.在pinyougou-manager-web创建BrandController类实现前后端的交接口
+    品牌列表前端代码的实现
+    1.pinyougou-manager-web下admin下的brand.html中引入angular.min.js
+    2.指定模块化和控制器
+    3.在对应ttable中对应的tr标签中实现ng-repeat遍历数据
+
+三、分页查询品牌列表：
+        1.后台代码逻辑
+            在pinyougou-dao中的pom.xml文件中需要添加一个pageHelper分页插件坐标和在SqlMapConfig.xml中配置pageHelper
+            通过分析，我们需要将对数据库进行分页的查询，这里的需要用到total总记录数和当前每页的记录数list在pinyougou-pojo创建一个PageRequest类来封装返回数据
+            服务层pinyougou-sellergoods-interface中写接口方法和在pinyougou-sellergoods-service中写实现分页的逻辑
+            在控制层pinyougou-manager-web中写路径和实现的方法
+        2.前台代码的实现
+            在pinyougou-manager-web的admin中的bread.html中引用分页插件angular中的分页开始和分页结束
+            在显示数据的地方定义一个conf="paginationConf"，在script中定义这个paginationConf里面的参数
+            写一个分页的方法被调用
+            写一个请求去执行get请求然后放回对应的数据
+
+四、增加列表：
+        1.后端代码逻辑：
+            在pinyougou-sellergoods-interface的BrandService.java新增方法定义
+            在com.pinyougou.sellergoods.service.impl的BrandServiceImpl.java实现该方法
+            执行结果封装实体：在pinyougou-pojo的entity包下创建类Result.java
+            在pinyougou-manager-web的BrandController.java中新增方法
+        2.前端代码逻辑：
+            JS代码 保存
+            绑定表单元素，我们用ng-model指令，绑定按钮的单击事件我们用ng-click
+            为了每次打开窗口没有遗留上次的数据，我们可以修改新建按钮，对entity变量进行清空操作
+五、品牌修改
+        1.后端代码逻辑：
+            pinyougou-sellergoods-interface的BrandService.java新增方法定义两个方法update和findOne
+            在pinyougou-sellergoods-service的BrandServiceImpl.java新增方法实现
+            在pinyougou-manager-web的BrandController.java新增方法两个方法
+        2.前端代码实现：
+            增加JS代码 查询实体
+            修改列表中的“修改”按钮，调用此方法执行查询实体的操作
+            修改JS的save方法
+
+六、品牌删除“
+        1.后台代码逻辑：
+
+            在pinyougou-sellergoods-interface的BrandService.java接口定义方法
+            在pinyougou-sellergoods-service的BrandServiceImpl.java实现该方法
+            在pinyougou-manager-web的BrandController.java中增加方法
+
+        2.前台代码逻辑
+            首先在页面上定义一个集合变量接收选中的id集合
+            写一个方法添加id到集合中(判断是勾选在添加，不勾选就从集合中删除id元素)方法中传递两个参数一个是id,一个是input标签源$event
+            在checkbox中添加调用的方法
+            id存到集合以后把id传给后端就可以了定义一个方法dele()
+
+
+七、条件查询
+        1.后台代码：
+            在pinyougou-sellergoods-interface中定义一个方法和分页查询是重载
+            在pinyougou-sellergoods-service的BrandServiceImpl.java实现该方法
+            在pinyougou-manager-web的BrandController.java中增加方法
+
+        2.前端代码实现逻辑
+            首先添加条件分页查询的标签属性，在input标签中绑定变量获取值，在button标签中添加调用的方法
+            在控制层写js代码实现条件查询
+            这里修改了reload方法里的调用方法
+            还需要初始化传递的参数，给一个空值
+
+八、封装前台服务
+        实现后台和前台交互的分离，方便后期维护
+
+九、1.规格列管理，增加行specificationController.js中写一个增加规格选项的方法
+        步骤：在点击新建的时候，弹出规格编辑的页面，在规格选项这个表格中绑定一个集合类型的变量或者数组类型的变量，在点击新增规格选项的时候实际上是做一个向这个集合中添加元素的操作
+        通过分析：现在弹出的这个表格中有两种数据，一个是规格名称，一个是新增规格选项集合中的数据，那我们怎么能把这两种数据提交上去
+        我们定义个实体名叫entity，我们提交entity的结构是：{specification:{},specificationOptionList:[]},最后提交到数据库中的是两个表，和我们之前是不一样的，之前的entity就是一个实体，现在的entity是一个组合，所以我们要以上面的结构给他包装提交，因为post的只能是一个，包装以后就是一个大的一个
+
+        接下来就是在specification.html绑定表格到这个变量中, <tr ng-repeat="pojo in entity.specificationOptionList">、<input  class="form-control" placeholder="规格选项" ng-model="pojo.optionName">
+                                                                                                    				            </td>
+                                                                                                    				            <td>
+                                                                                                    				            	<input  class="form-control" placeholder="排序" ng-model="pojo.orders">、添加点击事件
+        注意点：在新建按钮的位置初始化定义的变量，这样每次点击新建的时候，都是从新开始                                                                              		 2.	规格列管理---删除行
+         删除行的话，其实就是移除集合中变量的元素，我们需要拿到需要删除元素的index索引进行删除，这里涉及到ng-repeat循环遍历拿索引的小知识点
+         在specificationController.js中定义一个deleTableRow删除的方法
+
+    3.规格列管理---保存
+        我们先前把数据分装成这样的格式{specification:{},specificationOptionList:[]}，那我们后端应该怎么去写，后端也应该有这个对应的组合实体类来和前端的对应，也就是这个组合实体类应该包含这两个属性，这样接收的时候，我就可以用这个组合实体类来接收了，拿到前端的数据以后，我们就可以向数据库进行存储，怎么存尼？调用它的一个insert方法，循环集合调用insert方法，这里还存在一个问题？从前端传递过来的数据中并不包含tb_specification_option
+  表中的字段spec_id,也就是这个数据在前端是获取不到的，那么在后端才会知道，也就是在tb_specification这个表存储之后才会知道，也就是说tb_specification_option表中的字段spec_id需要在tb_specification表中添加值以后，才能得到对应的spec_id,对于这个问题：我们需要在TbSpecificationMapper.xml文件中加一段配置，这个配置的作用是：我们能够得到增加之后的id值，在inset标签位置添加
+  <selectKey resultType="java.lang.Long" order="AFTER" keyProperty="id">
+                                                                                                                                                                       SELECT LAST_INSERT_ID() AS id
+                                                                                                                                                              	</selectKey>这段配置它的意思就是这个表tb_specification在增加之后，它能够它id返回回来，如果不添加这个配置，增加之后这个id是得不到的，通过实体类属性的id，就能够拿到最新增加的值id，拿到之后接下来往tb_specification_option这个s表中插入数据，就能得到这个值id，这个是第一步操作，第二步操作是建立上述组合实体类在pojo项目下创建，Specification这里组合实体类，包括了规格和规格选项集合，只有通过组合实体类才能从前端把数据拿过来 ，我们在MyBatis建立关联也行，但是我们不建议使用，因为我们之后要做MySql分片，如果这个关联建立的太多，会影响执行效率，写完以后，我们要去修改之前的代码SpecificationService中的增加的代码
+  add()方法中的传参，变更实体类就可以了，接着去实现类写具体的逻辑代码，变更controller层的实体类。后台写完以后，开始实现前端的代码
+
+
+  4.品牌下拉列表：
+  //后台的代码实现：因为上面的数据可定是后台发送回来的数据，那么现在要思考一个问题：后台要给的数据肯定是[{id:1,text:'联想'},{id:2,text:'华为'},{id:3,text:'中兴'}]这样的格式，要不然你就给一个对象，前端进行封装也是可以的，我们现在做的是给这个格式，通过查看数据库中tb_type_template表我们发现数据中的字段不是一致的，其中的name要变成text格式，这里解决的办法是让他封装成一个map集合，这里需要在数据访问层dao去做这件事来到TbBrandMapper.xml中添加select查询语句,写完以后就是来到TbBrandMapper中添加反回list集合的方法，接下来就是去service，BrandService接口中添加反回list集合的方法，然后在实现类中去实现具体的代码逻辑,最后去controller层去写具体的代码
+
+  //关联品牌的数据后台代码写完以后，我们现在完成前端请求数据的代码，首先在brandService.js中写请求后台的代码，这里写完以后，我们要在typeTemplateController.js调用这个服务，这里要注入这个服务同时在type_template.html引入这个服务,代码写完以后，我们要在type_template.html页面初始化这个方法，ng-init="findBrandList()"
+
+  5.规格下拉列表和品牌差不多：
+    首先在TbSpecificationMapper.xml增加查询返回list集合的代码,接下来在这个TbSpecificationMapper接口中添加这个方法,在来到service层中SpecificationService接口中写这个方法,SpecificationServiceImpl中写实现的代码，在去SpecificationController写规格下拉列表的代码,测试完成以后，
+    写前端的代码来到specificationService.js发送ajax get请求后台拿数据，接下来就是在typeTemplateController.js中实现服务的调用,注入specificationService这个服务，在type_template.html页面中引用specificationService.js这个js文件，回头在typeTemplateController.js中定义变量接收后台返回回来的数据，进行数据的展示,到type_template.html页面初始化findSpecList()方法，在规格出定义input标签使用select2
+
+    6.扩展属性：
+        这个和规格选项前端差不多，但是后台代码不一样，规格选项是存在另外一张表里的，这里是和上面的商品类型、关联品牌、关联规格都是存在一张表里的，就这点区别
+        1.增加行的功能：
+            在typeTemplateController.js中新增代码，这里写增加行的代码
+            $scope.addTableRow = function(){
+                $scope.entity.customAttributeItems.push({});
+            }
+            因为这里的数据需要页面一加载的时候，我们就要初始化，所以在type_template.html页面中的新建按钮中对数据进行初始化：ng-click="entity={customAttributeItems:[]}",接下来就是在新增属性的位置调用这个让发addTableRow()方法就行了,下面的表格需要从新绑定一下<tr ng-repeat="pojo in entity.customAttributeItems">，ng-model="pojo.text"这里的text是表tb_type_template中custom_attribute_items字段中的json数据的key：text
+         2.删除行的操作。。。。
+
+         3.这个编辑表中的功能实现完成以后，就是实现保存的功能，这个的品牌列表和规格列表还有扩展属性都进行的数据的绑定，所以这里的商品类型也需要绑定，ng-model="entity.name",这些做完以后，我们在点保存的时候执行一个save方法，ng-click="save()",这个方法也是自动生成之后的，所有直接调用就可以了
+
+
+  7.点击修改弹出表格实现数据的回显
+    打开这个type_template.html这个页面中找到修改的地方添加一个点击事件findOne(entity.id),这个方法是自动生成的，当我们点击的时候，发现只显示手机这个商品类型，其他的不显示，通过F12发现有这么一段错误angular.min.js:80 TypeError: Cannot use 'in' operator to search for 'length' in [{"id":1,"text":"联想"},这个是一个字符串，这个时候你们要想你的数据库本事文本类型的字段，所以他从后端取出来的entity本身的这个几个属性entity.specIds、entity.brandIds、entity.customAttributeItems他表示的是字符串，但是你在这个type_template.html页面中用的是可不是字符串，这里用的是集合，但读出了的是字符串，所以说在这里会显示不了数据，我在存的时候，后台会自动帮我转化的，所以存可以，显示出来需要转换。这里解决的办法很简单
+        a.我们来到typeTemplateController.js这里找到findOne()方法这里，这是把这几个属性转换成json对象显示给页面
+
+
+  8.删除模板：
+    在type_template.html页面中找到循环遍历的地方添加ng-click="updateSelection($event,entity.id)",再去删除的地方添加一个ng-click="dele()"
+
+  9.页面中数据的美好展示功能：
+    我们需要将一个json字符串，某个属性值取出来，用逗号拼接成一个新的字符串，这样的功能比较常用，所以我们将方法写法到baseController.js中，这里可以这样写：
+    这里的jsonString表示的是这个json对象[{"id":16,"text":"TCL"}]，key表示json中的text
+    $scope.jsonToString = function(jsonString,key){
+        var json = JSON.parse(jsonString);
+        var value = "";
+        for(i>0;i<json.length();i++{
+            if(i>0){
+                value+=",";
+            }
+            value+=json[i][key]
+        }
+
+        return value;
+    }
+
+    接下来就是去type_template.html这个页面中调用这个方法把原来的属性传进去
+
+  10.安全管理springSecurity认证
+    1.添加两个坐标
+    2.配置web.xml中配置springSecurity.xml文件，监听器(ContextLoaderListener)，还有过滤器(DelegatingFilterProxy,springSecurityFilterChain)
+    3.在springSecurity.xml文件中配置不拦截的页面和资源和页面访问的规则(配置CSRF跨站请求伪造，和框架不拦截让其使用iframe)和管理认证的用户
+
+  11.登录成功以后我们需要显示登录人的信息
+        1.这个时候我们写一个action去去读取当前已经登录的这个用户，然后通过前端去访问这个action得到这个值并展示，
+        2.我们在Controller中创建一个action类LoginController定义一个方法拿到用户名返回一个map集合给前端
+        3.前端在service.js中实现ajax get()请求拿到返回的json对象，在indexController.js中引用LoginService服务实现数据的返回，在index.html中引入controller和和服务定义模块，找到测试用户{{LoginName}}展示数据
+
+  12.用户退出登录
+    1.在spring-security.xml中的<http>中加<loginout/>,然后去index.html中找注销中写../loginout
+
+  13.实现商家管理中的商家审核页面seller_1.html实现动态数据的展示
+
+  14.商家审核：
+        来到SellerService接口服务定义一个方法,在接口实现类中去通过sellerId查询出来Seller商家，然后把传递过来的状态射设置进去，再更新一下数据库
+        服务层写完以后，我们来打controller控制层SellerController添加一个方法放回给前台
+
+        后台写完以后，我们来到前端的sellerService.js中写一个updateStatus 方法实现
+发起ajax请求，接下来去sellerController.js中写一个updateStatus方法去调用这个服务中的updateStatus方法，
+        写完这个以后页面要去调用这个sellerController.js中的updateStatus方法，找到审核通过的按钮ng-click="updateStatus()"
+  二、商家入驻：注册的意思
+        1在pinyougou-shop-web工程下实现的，首先在pom中添加pojo坐标，然后添加js和controller层
+        2.在register.html中绑定数据，添加add()方法，在保存的的时候页面中是没法获取商家注册状态和时间的，所以我们在后台需要给他实现添加两个属性在pinyougou-sellergoods-service这个工程下找到SellerServiceImpl这个类中的add方法去设置两个属性
+
+  三、商家系统登录与安全控制
+        1.这里的操作和运营商登录管理功能有什么区别呢？运营商登录不交简单，我们的用户名都是写死在配置文件中的，为什么要写在配置文件中呢？因为当前表中没有管理员的表，加入数据不交简单，不需要改动的话可以写配置文件中，当然你也可写在数据库中，然后去查询数据，我们要在商家系统登录于安全控制这里用到数据库这里也要用到springSecurity融入到这个项目中，这里就是要读取数据库和密码加密
+        2.自定义认证类
+            1.pom.xml、web.xml、shoplogin.html 参照运营商后台管理
+            2.在pinyougou -shop-web创建com.pinyougou.service包，在包下创建UserDetailsServiceImpl实现UserDetailsService接口,这个UserDetailsServiceImpl是SpringSecurity认证的需要的类,在这里写具体的代码逻辑，
+            3.写完以后，我们要去配置springSecurity.xml文件中不拦截的资源、可以访问的规则、认证管理器、dubbo服务访问接口的实现类
+
+            4.在商家入驻注册的时候对其密码加密
+                来到SellerController类中的add方法中实现注册的时候进行加密BcryptPasswordEncoder进行加密
+            5.加密完以后实现登录解密
+                在springSecurity中配置一个beans来解密
+
+
+
+  四、商品分类功能
+        1.根据顶级parentId查询商品，在pinyougou-sellergoods-interface工程下的ItemCatService添加一个方法findByParentId(),接下来去pinyougou-sellergoods-service这个工程下的ItemCatServiceImpl实现方法
+        2.接下来就去pinyougou-manager-web这个工程下的ItemCatController中添加方法返回数据给前端
+        3.开始写前端的代码，在pinyougou-manager-web工程下的itemCatService.js中发起ajax请求,在itemCatController.js中调用服务，接下来在页面中引入5个js文件，在body写ng-app ng-controller ng-init='findByParentId(0)'在展示数据的地方循环遍历list集合实现数据的展示,接下来在'查询下级'的按钮实现ng-click='findByParentId(entity.id)'和ng-show='MyVar'
+
+        4.面包蟹功能展示
+            首先在item_cat.html中找到三个超链接的方法分别写上<a href="#" ng-click="findByParentId(0)">顶级分类列表</a>。。。。
+            接下来是实现定义的两个变量(entity_1、entity_2)的具体实现来到itemCatController.js中实现具体的逻辑，先定义一个变量来控制级别，定义一个方法来控制这个变量的增加，然后在定义一个方法来控制两个实体
+            来到item_cat.html中调用js中的方法面包蟹地方和查询下级按钮的地方
+
+
+注意：
+    前台发送访问返回回来的数据格式是Json对象或者jsons数组集合，通过key拿到里面的value值，这个value可以是数组或者集合，再或者是对象，一步一步解析就可以了
+
+    一、添加商品
+        1.通过看数据库中的表结构，发现这里是有三张表一个是tb_goods、tb_goods_desc、tb_item这表
+        引发出tb_goods表示的是SPU商品信息，tb_goods_desc表示SPU商品扩展信息，tb_item表示的是SKU列表
+        2.代码实现在TbGoodsMapper.xml文件中插入select查询语句select last_insert_id() as id
+        3.创建Goods商品组合实体类，来到GoodsService接口,在添加的位置把TbGoods改为Goods接收的是一个组合实体类，在GoodsServiceImpl中的add方法中实现插入的功能，
+        4.来到pinyougou-manager-web 中的GoodsCntroller中的add方法处注释该方法，它的商品添加功能在这个项目中的pinyougou-shop-web来到GoodsController中修改代码，在这里我们看数据库表发现tb_goods中有个seller_id商家id，所以在添加到时候我们要得到这个Id,这个值是我们之前的登录成功以后拿到的商家Id,
+        5.后端的代码写完以后，我们要开始写前端的代码了，首先GoodsService.js不用该，GoodsController.js要改，这里面有个save方法，但是我们不用，自己写个add方法,来到goods_edit.html中先引入js,接下来就是绑定数据  ng-model="entity.goods.goodsName",绑定好数据之后，我们来到保存按钮的地方添加点击事件add方法
+        6.我们学习了一个富文本编辑器kindEditor，这里我们在页面中实现了相关的代码，我们只需要调用它的方法实现清空和取值，取出来的值给Tb_goods_desc中的introduction中储存起来，在goodsController.js中add方法中获取富文本编辑器的值出来
+
+      注意在删除图片或者信息的时候，如果我们操作的删除不是删除数据库中的，那么数据库中会有垃圾，我们需要怎么做尼？做一个定时的任务，比如每天半夜的12点开启一个进程跑起来，查看数据库和服务器有没有垃圾，在进行批量的删除
